@@ -59,6 +59,10 @@ const mcpClient = new MultiServerMCPClient({
             command: 'node',
             // 命令参数：服务器文件的绝对路径
             args: ['/Users/tengjinhua/Documents/agent-learn/tool-test/src/my-mcp-server.mjs']
+        },
+        'weather-mcp-server':{
+            command: 'node',
+            args: ['/Users/tengjinhua/Documents/agent-learn/tool-test/src/weather-mcp-server.mjs']
         }
     }
 });
@@ -172,7 +176,63 @@ for (const [serverName, resources] of Object.entries(res)){
 // await runAgentWithTools('查一下用户 003 的信息')
 
 // 这里我们测试问答，问题答案在我们加载的资源里
-await runAgentWithTools("MCP Server 的使用指南是什么？")
+// await runAgentWithTools("MCP Server 的使用指南是什么？")
+
+await runAgentWithTools("张掖市民乐县今天的天气怎么样？以及未来7天的天气怎么样呢？")
+// 运行结果
+/**
+ * 天气 MCP 服务器已启动
+ * 🔍 检测到2个工具调用
+ * 🔍 工具调用: get_current_weather
+ * 🔍 检测到2个工具调用
+ * 🔍 工具调用: get_weather_forecast
+ *
+ * ✨  最终回复:
+ * 根据查询结果，武汉今天的天气和未来7天预报如下：
+ *
+ * ## 🌤️ 武汉今日天气（4月10日）
+ *
+ * **实时天气状况：**
+ * - 天气：雾
+ * - 温度：21℃（体感温度：20℃）
+ * - 湿度：82%
+ * - 风向：北风 3级
+ * - 气压：1006hPa
+ * - 能见度：6km
+ *
+ * 今天白天最高温27℃，夜间有小雨，最低温17℃。
+ *
+ * ## 📅 武汉未来7天天气预报
+ *
+ * **4月11日（周六）**
+ * - 白天：小雨，最高温22℃
+ * - 夜间：小雨，最低温16℃
+ *
+ * **4月12日（周日）**
+ * - 白天：多云，最高温22℃
+ * - 夜间：多云，最低温14℃
+ *
+ * **4月13日（周一）**
+ * - 白天：小雨，最高温21℃
+ * - 夜间：阴，最低温14℃
+ *
+ * **4月14日（周二）**
+ * - 白天：小雨，最高温18℃
+ * - 夜间：多云，最低温14℃
+ *
+ * **4月15日（周三）**
+ * - 白天：阴，最高温21℃
+ * - 夜间：阴，最低温14℃
+ *
+ * **4月16日（周四）**
+ * - 白天：多云，最高温24℃
+ * - 夜间：多云，最低温17℃
+ *
+ * ## 💡 温馨提示
+ * - 今天有雾，能见度较低，出行请注意交通安全
+ * - 未来几天多有小雨天气，建议携带雨具
+ * - 气温变化不大，但早晚温差适中，注意适当增减衣物
+ */
 
 // 最后关闭 MCP 客户端，释放进程
 await mcpClient.close()
