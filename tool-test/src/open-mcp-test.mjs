@@ -22,7 +22,7 @@ import { startLoadingAnimation } from './utils.mjs'
 // 高德官方 MCP 服务 QPS 限制，每次工具调用后延迟多少毫秒
 // 默认 1000ms = 1秒，符合大多数免费版限制
 // 可以通过环境变量 AMAP_REQUEST_DELAY 修改
-const TOOL_CALL_DELAY = parseInt(process.env.AMAP_REQUEST_DELAY || '1000', 10);
+const TOOL_CALL_DELAY = parseInt( '1000', 10);
 
 /**
  * 延迟函数
