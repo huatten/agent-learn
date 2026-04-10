@@ -18,6 +18,21 @@ import { HumanMessage, SystemMessage, ToolMessage } from '@langchain/core/messag
 import { startLoadingAnimation } from './utils.mjs'
 
 
+// ========== QPS 控制配置 ==========
+// 高德官方 MCP 服务 QPS 限制，每次工具调用后延迟多少毫秒
+// 默认 1000ms = 1秒，符合大多数免费版限制
+// 可以通过环境变量 AMAP_REQUEST_DELAY 修改
+const TOOL_CALL_DELAY = parseInt(process.env.AMAP_REQUEST_DELAY || '1000', 10);
+
+/**
+ * 延迟函数
+ * @param {number} ms - 延迟毫秒数
+ */
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 // ========== 1. 初始化大语言模型 ==========
 // 从环境变量读取配置，创建大模型实例
 // 这种方式可以灵活切换不同的模型提供商，只要接口兼容 OpenAI
@@ -56,7 +71,10 @@ const mcpClient = new MultiServerMCPClient({
             "command": "npx",
             "args": [
                 "-y",
-                "chrome-devtools-mcp@latest"
+                "chrome-devtools-mcp@latest",
+                "--isolated",
+                "--no-performance-cru",
+                "--no-usage-statistic"
             ]
         }
     }
@@ -141,6 +159,18 @@ const runAgentWithTools = async(query, maxIterations = 30)=>{
                 tool_call_id: toolCall.id,
                 content: contentStr,
             }))
+
+            // QPS 控制：如果有多个工具调用，每个之间添加延迟，避免超过高德 API 的 QPS 限制
+            // 如果不是最后一个工具调用，添加延迟
+            if (response.tool_calls.length > 1 && TOOL_CALL_DELAY > 0) {
+                console.log(chalk.yellow(`⏳ QPS 控制，等待 ${TOOL_CALL_DELAY}ms...`));
+                await delay(TOOL_CALL_DELAY);
+            }
+        }
+
+        // 一轮工具调用全部完成后，如果有多个工具调用，添加延迟
+        if (response.tool_calls.length > 0 && TOOL_CALL_DELAY > 0) {
+            await delay(TOOL_CALL_DELAY);
         }
         // 工具调用执行完后，会进入下一轮循环，让 AI 基于工具结果继续思考
     }
@@ -155,7 +185,7 @@ const runAgentWithTools = async(query, maxIterations = 30)=>{
 // ========== 5. 运行测试 ==========
 // 可以测试用户查询工具调用：
 // await runAgentWithTools("武汉市融创智谷附近的酒店，以及去的路线，路线规划生成文档保存到 /Users/tengjinhua/Documents/agent-learn/tool-test 下面的一个md的文件")
-await runAgentWithTools("武汉市融创智谷附近的酒店，找出距离最近最高的5个，并打开携程网找出每个酒店的链接给我在浏览器打开展示，每个tab展示一个酒店")
+await runAgentWithTools("武汉市融创智谷附近的酒店，找出距离最近最高的5个，并打开百度地图分别把他们展示出来，每个tab展示一个酒店的百度地图地址")
 
 // 最后关闭 MCP 客户端，释放进程
 await mcpClient.close()
