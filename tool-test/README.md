@@ -365,27 +365,49 @@ if (response.tool_calls.length > 0 && TOOL_CALL_DELAY > 0) {
 
 ---
 
-## ⚙️ 环境变量配置模板
+## ⚙️ 完整环境变量配置
+
+| 变量名 | 说明 | 是否必填 |
+|--------|------|----------|
+| **大模型配置** | | |
+| `OPENAI_API_KEY` | 大模型 API Key（OpenAI 兼容格式） | ✅ 必填 |
+| `OPENAI_BASE_URL` | API 基础 URL，第三方兼容服务需要配置（例如：`https://open.bigmodel.cn/api/paas/v4/`） | ✅ 必填 |
+| `MODEL_NAME` | 模型名称（例如：`glm-5`、`gpt-4o`） | ✅ 必填 |
+| **和风天气** | | |
+| `HF_WEATHER_PROJECT_ID` | 和风天气项目 ID | ✅ 使用天气功能必填 |
+| `HF_WEATHER_KID` | 和风天气凭据 ID (kid) | ✅ 使用天气功能必填 |
+| `HF_WEATHER_PRIVITE_KEY` | 和风天气 Ed25519 私钥 | ✅ 使用天气功能必填 |
+| `HF_WEATHER_APIKEY` | 和风天气 API Key | ✅ 使用天气功能必填 |
+| `HF_WEATHER_API_HOST` | 和风天气 API 网关地址 | ✅ 使用天气功能必填 |
+| `JWT_EXPIRE_SECONDS` | JWT 过期时间，单位秒，默认 `3600` (1小时) | ⚙️ 可选 |
+| **高德地图** | | |
+| `AMAP_MAPS_API_KEY` | 高德地图 API Key | ✅ 使用高德 MCP 必填 |
+| `AMAP_REQUEST_DELAY` | 工具调用间隔毫秒数，用于 QPS 限流，默认 `1000` (1秒) | ⚙️ 可选 |
+| **其他** | | |
+| `ALLOWED_PATHS` | 文件系统 MCP 允许访问的路径，多个用逗号分隔 | ⚙️ 可选 |
+| `AMAP_MAPS_APIKEY` | 高德地图 API Key（兼容旧配置名） | ⚙️ 兼容 |
+| `HF_WEATHER_APIKEY` | 和风天气 API Key（兼容旧配置名） | ⚙️ 兼容 |
 
 ```env
-# 大模型配置
-OPENAI_API_KEY=你的大模型API Key
-OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4/  # 示例：智谱AI
+# .env 文件示例
+# ========== 大模型配置 ==========
+OPENAI_API_KEY=your-api-key-here
+OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
 MODEL_NAME=glm-5
 
-# 和风天气配置（动态JWT）
-HF_WEATHER_PROJECT_ID=项目ID
-HF_WEATHER_KID=凭据ID
-HF_WEATHER_PRIVITE_KEY=私钥
-HF_WEATHER_APIKEY=API Key
-HF_WEATHER_API_HOST=API网关
+# ========== 和风天气配置 ==========
+HF_WEATHER_PROJECT_ID=your-project-id
+HF_WEATHER_KID=your-kid
+HF_WEATHER_PRIVITE_KEY=-----BEGIN PRIVATE KEY-----...
+HF_WEATHER_APIKEY=your-api-key
+HF_WEATHER_API_HOST=https://xxx.re.qweatherapi.com
 JWT_EXPIRE_SECONDS=3600
 
-# 高德地图官方 MCP
-AMAP_MAPS_API_KEY=你的高德API Key
-AMAP_REQUEST_DELAY=1000  # 工具调用间隔（毫秒）
+# ========== 高德地图配置 ==========
+AMAP_MAPS_API_KEY=your-amap-key
+AMAP_REQUEST_DELAY=1000
 
-# 文件系统允许路径（给 filesystem MCP 服务器用）
+# ========== 其他配置 ==========
 ALLOWED_PATHS=/path/1,/path/2
 ```
 
