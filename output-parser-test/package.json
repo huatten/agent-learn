@@ -1,10 +1,10 @@
 {
-  "name": "memory-test",
+  "name": "output-parser-test",
   "version": "1.0.0",
   "main": "index.js",
   "author": "tjh",
   "license": "ISC",
-  "description": "Memory 管理的三大策略：截断、总结、检索",
+  "description": "结构化大模型输出：output parser 还是 tool？",
   "dependencies": {
     "@langchain/classic": "^1.0.31",
     "@langchain/community": "^1.1.28",
