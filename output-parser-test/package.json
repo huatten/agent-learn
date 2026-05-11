@@ -16,8 +16,9 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@zilliz/milvus2-sdk-node": "^2.6.13",
     "dotenv": "^16.6.1",
-    "openai": "^6.34.0",
     "js-tiktoken": "^1.0.21",
+    "mysql2": "^3.22.3",
+    "openai": "^6.34.0",
     "zod": "^4.3.6"
   }
 }
