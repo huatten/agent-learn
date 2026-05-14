@@ -1,0 +1,19 @@
+{
+  "name": "prompt-template-test",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "tjh",
+  "license": "ISC",
+  "description": "组件化管理 prompt",
+  "dependencies": {
+    "@langchain/classic": "^1.0.31",
+    "@langchain/community": "^1.1.28",
+    "@langchain/core": "^1.1.41",
+    "@langchain/mcp-adapters": "^1.1.3",
+    "@langchain/openai": "^1.4.4",
+    "@langchain/textsplitters": "^1.0.1",
+    "dotenv": "^16.6.1",
+    "openai": "^6.34.0",
+    "zod": "^4.3.6"
+  }
+}
