@@ -1,0 +1,17 @@
+# 依赖
+node_modules
+.pnpm-store
+
+# 锁文件（pnpm 用 workspace 管理，不需要提交）
+pnpm-lock.yaml
+
+# 环境变量（含 API Key）
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# 系统
+.DS_Store
+Thumbs.db

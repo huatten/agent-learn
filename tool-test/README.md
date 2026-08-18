@@ -264,7 +264,7 @@ async function getValidJwt() {
 ```env
 HF_WEATHER_PROJECT_ID=项目ID
 HF_WEATHER_KID=凭据ID
-HF_WEATHER_PRIVITE_KEY=Ed25519私钥
+HF_WEATHER_PRIVATE_KEY=Ed25519私钥
 HF_WEATHER_APIKEY=API Key
 HF_WEATHER_API_HOST=API网关
 JWT_EXPIRE_SECONDS=3600  # JWT过期时间（秒）
@@ -376,7 +376,7 @@ if (response.tool_calls.length > 0 && TOOL_CALL_DELAY > 0) {
 | **和风天气** | | |
 | `HF_WEATHER_PROJECT_ID` | 和风天气项目 ID | ✅ 使用天气功能必填 |
 | `HF_WEATHER_KID` | 和风天气凭据 ID (kid) | ✅ 使用天气功能必填 |
-| `HF_WEATHER_PRIVITE_KEY` | 和风天气 Ed25519 私钥 | ✅ 使用天气功能必填 |
+| `HF_WEATHER_PRIVATE_KEY` | 和风天气 Ed25519 私钥 | ✅ 使用天气功能必填 |
 | `HF_WEATHER_APIKEY` | 和风天气 API Key | ✅ 使用天气功能必填 |
 | `HF_WEATHER_API_HOST` | 和风天气 API 网关地址 | ✅ 使用天气功能必填 |
 | `JWT_EXPIRE_SECONDS` | JWT 过期时间，单位秒，默认 `3600` (1小时) | ⚙️ 可选 |
@@ -398,7 +398,7 @@ MODEL_NAME=glm-5
 # ========== 和风天气配置 ==========
 HF_WEATHER_PROJECT_ID=your-project-id
 HF_WEATHER_KID=your-kid
-HF_WEATHER_PRIVITE_KEY=-----BEGIN PRIVATE KEY-----...
+HF_WEATHER_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----...
 HF_WEATHER_APIKEY=your-api-key
 HF_WEATHER_API_HOST=https://xxx.re.qweatherapi.com
 JWT_EXPIRE_SECONDS=3600

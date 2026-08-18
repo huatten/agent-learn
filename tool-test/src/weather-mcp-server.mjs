@@ -30,7 +30,7 @@ const HF_WEATHER_API_HOST = process.env.HF_WEATHER_API_HOST;
 const HF_WEATHER_APIKEY = process.env.HF_WEATHER_APIKEY;
 const HF_WEATHER_PROJECT_ID = process.env.HF_WEATHER_PROJECT_ID;
 const HF_WEATHER_KID = process.env.HF_WEATHER_KID;
-const HF_WEATHER_PRIVITE_KEY = process.env.HF_WEATHER_PRIVITE_KEY;
+const HF_WEATHER_PRIVATE_KEY = process.env.HF_WEATHER_PRIVATE_KEY;
 // JWT 过期时间，默认 10min（600 秒）
 const JWT_EXPIRE_SECONDS = parseInt(process.env.JWT_EXPIRE_SECONDS || 10 * 60, 10);
 
@@ -56,7 +56,7 @@ async function getValidJwt() {
     console.error('[JWT] JWT 已过期或未缓存，正在重新生成...');
 
     // 导入私钥
-    const privateKey = await importPKCS8(HF_WEATHER_PRIVITE_KEY, 'EdDSA');
+    const privateKey = await importPKCS8(HF_WEATHER_PRIVATE_KEY, 'EdDSA');
 
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + JWT_EXPIRE_SECONDS;
@@ -163,11 +163,11 @@ server.registerTool('get_current_weather', {
     }),
 }, async ({ city }) => {
     // 检查配置
-    if (!HF_WEATHER_PROJECT_ID || !HF_WEATHER_KID || !HF_WEATHER_PRIVITE_KEY || !HF_WEATHER_APIKEY || !HF_WEATHER_API_HOST) {
+    if (!HF_WEATHER_PROJECT_ID || !HF_WEATHER_KID || !HF_WEATHER_PRIVATE_KEY || !HF_WEATHER_APIKEY || !HF_WEATHER_API_HOST) {
         return {
             content: [{
                 type: 'text',
-                text: '错误：环境变量未配置完整。需要配置：HF_WEATHER_PROJECT_ID, HF_WEATHER_KID, HF_WEATHER_PRIVITE_KEY, HF_WEATHER_APIKEY, HF_WEATHER_API_HOST'
+                text: '错误：环境变量未配置完整。需要配置：HF_WEATHER_PROJECT_ID, HF_WEATHER_KID, HF_WEATHER_PRIVATE_KEY, HF_WEATHER_APIKEY, HF_WEATHER_API_HOST'
             }]
         };
     }
@@ -241,11 +241,11 @@ server.registerTool('get_weather_forecast', {
     }),
 }, async ({ city }) => {
     // 检查配置
-    if (!HF_WEATHER_PROJECT_ID || !HF_WEATHER_KID || !HF_WEATHER_PRIVITE_KEY || !HF_WEATHER_APIKEY || !HF_WEATHER_API_HOST) {
+    if (!HF_WEATHER_PROJECT_ID || !HF_WEATHER_KID || !HF_WEATHER_PRIVATE_KEY || !HF_WEATHER_APIKEY || !HF_WEATHER_API_HOST) {
         return {
             content: [{
                 type: 'text',
-                text: '错误：环境变量未配置完整。需要配置：HF_WEATHER_PROJECT_ID, HF_WEATHER_KID, HF_WEATHER_PRIVITE_KEY, HF_WEATHER_APIKEY, HF_WEATHER_API_HOST'
+                text: '错误：环境变量未配置完整。需要配置：HF_WEATHER_PROJECT_ID, HF_WEATHER_KID, HF_WEATHER_PRIVATE_KEY, HF_WEATHER_APIKEY, HF_WEATHER_API_HOST'
             }]
         };
     }
@@ -334,7 +334,7 @@ server.registerResource('天气工具使用指南', 'docs://weather-guide', {
 环境变量配置：
 - HF_WEATHER_PROJECT_ID=项目ID
 - HF_WEATHER_KID=凭据ID
-- HF_WEATHER_PRIVITE_KEY=Ed25519私钥
+- HF_WEATHER_PRIVATE_KEY=Ed25519私钥
 - HF_WEATHER_APIKEY=API Key
 - HF_WEATHER_API_HOST=API网关地址
 

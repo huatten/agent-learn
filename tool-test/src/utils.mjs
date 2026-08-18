@@ -33,15 +33,23 @@ const spinner = ['⠋', '⠙', '⠹', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 export function startLoadingAnimation(text) {
     let i = 0;  // 当前 spinner 索引
 
+    // 检查终端是否支持 clearLine（某些环境可能不支持）
+    const canClearLine = typeof process.stdout.clearLine === 'function';
+
     // 每 80ms 更新一次，这个速度看起来最流畅
     const interval = setInterval(() => {
         // 取下一个 spinner 字符，到末尾后回到开头（取模运算）
         i = (i + 1) % spinner.length;
 
-        // 清除当前整行内容
-        process.stdout.clearLine(0);
-        // 把光标移到行首
-        process.stdout.cursorTo(0);
+        if (canClearLine) {
+            // 清除当前整行内容
+            process.stdout.clearLine(0);
+            // 把光标移到行首
+            process.stdout.cursorTo(0);
+        } else {
+            // 不支持 clearLine 时用回车覆盖
+            process.stdout.write('\r');
+        }
         // 输出当前帧：spinner + 提示文字
         // 用 chalk 给 spinner 和文字上色
         process.stdout.write(`${chalk.cyan(spinner[i])} ${chalk.blue(text)}`);
@@ -50,8 +58,12 @@ export function startLoadingAnimation(text) {
     // 返回停止函数，调用者在完成后调用这个函数停止动画
     return () => {
         clearInterval(interval);    // 清除定时器，停止动画
-        process.stdout.clearLine(0);  // 清除当前行
-        process.stdout.cursorTo(0);  // 光标回到行首
+        if (canClearLine) {
+            process.stdout.clearLine(0);  // 清除当前行
+            process.stdout.cursorTo(0);  // 光标回到行首
+        } else {
+            process.stdout.write('\r');
+        }
     };
 }
 

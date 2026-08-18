@@ -1,0 +1,9 @@
+packages:
+  - 'memory-test'
+  - 'milvus-test'
+  - 'output-parser-test'
+  - 'prompt-template-test'
+  - 'rag-test'
+  - 'tool-test'
+allowBuilds:
+  protobufjs: false
