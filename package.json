@@ -9,7 +9,8 @@
     "output-parser-test",
     "prompt-template-test",
     "rag-test",
-    "tool-test"
+    "tool-test",
+    "runnable-test"
   ],
   "scripts": {
     "up": "pnpm update -r",
