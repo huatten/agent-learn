@@ -41,7 +41,11 @@ const MILVUS_ADDRESS = "localhost:19530"
 // 文本块大小：每个 chunk 约 500 个字符 太小会碎片化语义，太大会超出上下文窗口
 const CHUNK_SIZE = 500;
 // 要处理的 EPUB 文件路径
-const EPUB_FILE = './epub/倚天屠龙记.epub';
+// 使用 import.meta.url 获取脚本所在目录，再拼接相对路径，
+// 这样无论在哪个目录运行脚本都能找到 EPUB 文件
+// 注意：需要用 fileURLToPath 解码 URL 编码的中文字符
+import { fileURLToPath } from 'url';
+const EPUB_FILE = fileURLToPath(new URL('../epub/倚天屠龙记.epub', import.meta.url));
 // 从文件名提取书名（去掉扩展名）
 const BOOK_NAME = parse(EPUB_FILE).name;
 console.log(`将要处理: ${BOOK_NAME}`);
@@ -144,7 +148,7 @@ const ensureCollection = async () => {
  * @param {number} chapterNum - 章节号
  * @returns {Promise<number>} 成功插入的数量
  */
-const insertChunksBatch = async (chunks, bookId, chapterNum)=> {
+const insertChunksBatch = async (chunks, bookId, chapterNum) => {
     try {
         if (chunks.length === 0) {
             console.log('没有文本块，跳过');
@@ -194,7 +198,7 @@ const insertChunksBatch = async (chunks, bookId, chapterNum)=> {
  * @param {string} bookId - 书籍ID
  * @returns {Promise<number>} 总共插入的记录数
  */
-const loadAndProcessEPubStreaming = async(bookId)=> {
+const loadAndProcessEPubStreaming = async (bookId) => {
     try {
         console.log(`\n开始加载 EPUB 文件: ${EPUB_FILE}`);
 
@@ -276,7 +280,7 @@ const loadAndProcessEPubStreaming = async(bookId)=> {
 /**
  * 主函数：电子书向量化完整流程
  */
-const main = async ()=> {
+const main = async () => {
     try {
         console.log('='.repeat(80));
         console.log('EPUB 电子书向量化程序');

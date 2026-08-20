@@ -17,5 +17,8 @@
     "outdated": "pnpm outdated -r",
     "ls": "pnpm ls -r --depth 0",
     "clean": "pnpm exec -- rm -rf node_modules && pnpm install"
+  },
+  "dependencies": {
+    "html-to-text": "10.0.1"
   }
 }

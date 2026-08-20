@@ -8,3 +8,5 @@ packages:
   - 'runnable-test'
 allowBuilds:
   protobufjs: false
+minimumReleaseAgeExclude:
+  - html-to-text@10.0.1

@@ -6,10 +6,10 @@
   "license": "ISC",
   "description": "结构化大模型输出：output parser 还是 tool？",
   "dependencies": {
-    "@langchain/core": "^1.1.41",
-    "@langchain/openai": "^1.4.4",
+    "@langchain/core": "^1.2.8",
+    "@langchain/openai": "^1.5.8",
     "dotenv": "^16.6.1",
-    "mysql2": "^3.22.3",
-    "zod": "^4.3.6"
+    "mysql2": "^3.23.3",
+    "zod": "^4.4.3"
   }
 }
