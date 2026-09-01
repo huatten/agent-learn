@@ -10,7 +10,9 @@
     "prompt-template-test",
     "rag-test",
     "tool-test",
-    "runnable-test"
+    "runnable-test",
+    "hello-nest-langchain",
+    "cron-job-tool"
   ],
   "scripts": {
     "up": "pnpm update -r",

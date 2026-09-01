@@ -6,6 +6,8 @@ packages:
   - 'rag-test'
   - 'tool-test'
   - 'runnable-test'
+  - 'hello-nest-langchain'
+  - 'cron-job-tool'
 allowBuilds:
   protobufjs: false
   unrs-resolver: true
