@@ -4,7 +4,9 @@ import { AppService } from './app.service';
 import { AiModule } from './ai/ai.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
-
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from './users/users.module';
+import { User } from './users/entities/user.entity';
 @Module({
   imports: [
     AiModule,
@@ -29,8 +31,24 @@ import { MailerModule } from '@nestjs-modules/mailer';
         },
       }),
     }),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASS'),
+        database: configService.get<string>('DB_NAME'),
+        entities: [User],
+        synchronize: true,
+        logging: true,
+        connectorPackage: 'mysql2',
+      }),
+    }),
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

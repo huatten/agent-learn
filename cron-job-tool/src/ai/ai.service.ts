@@ -84,11 +84,14 @@ export class AiService {
     private sendEmailTool: Runnable<Record<string, any>, string>,
     @Inject('WEB_SEARCH_TOOL')
     private webSearchTool: Runnable<Record<string, any>, string>,
+    @Inject('DB_USER_CRUD_TOOL')
+    private dbUserCrudTool: Runnable<Record<string, any>, string>,
   ) {
     this.modelWithTools = model.bindTools([
       this.queryUserTool,
       this.sendEmailTool,
       this.webSearchTool,
+      this.dbUserCrudTool,
     ]);
   }
 
@@ -96,11 +99,11 @@ export class AiService {
     const messages: BaseMessage[] = [
       new SystemMessage(
         '你是一个智能助手，可以调用以下工具完成任务：' +
-          '1. query_user：按用户ID查询用户信息；' +
-          '2. web_search：联网搜索最新信息；' +
-          '3. send_email：发送邮件。' +
-          '规则：需要调用工具时，直接发起工具调用，不要输出任何解释文字；' +
-          '拿到工具执行结果后，再基于结果输出最终回答。',
+        '1. query_user：按用户ID查询用户信息；' +
+        '2. web_search：联网搜索最新信息；' +
+        '3. send_email：发送邮件。' +
+        '规则：需要调用工具时，直接发起工具调用，不要输出任何解释文字；' +
+        '拿到工具执行结果后，再基于结果输出最终回答。',
       ),
       new HumanMessage(query),
     ];
@@ -146,6 +149,17 @@ export class AiService {
               content: result,
             }),
           );
+        } else if (toolName === 'db_user_crud') {
+          const result = await this.dbUserCrudTool.invoke(toolCall.args);
+          messages.push(
+            new ToolMessage({
+              tool_call_id: toolCallId,
+              name: toolName,
+              content: result,
+            }),
+          );
+        } else {
+          throw new Error(`未知工具: ${toolName}`);
         }
       }
     }
@@ -155,11 +169,11 @@ export class AiService {
     const messages: BaseMessage[] = [
       new SystemMessage(
         '你是一个智能助手，可以调用以下工具完成任务：' +
-          '1. query_user：按用户ID查询用户信息；' +
-          '2. web_search：联网搜索最新信息；' +
-          '3. send_email：发送邮件。' +
-          '规则：需要调用工具时，直接发起工具调用，不要输出任何解释文字；' +
-          '拿到工具执行结果后，再基于结果输出最终回答。',
+        '1. query_user：按用户ID查询用户信息；' +
+        '2. web_search：联网搜索最新信息；' +
+        '3. send_email：发送邮件。' +
+        '规则：需要调用工具时，直接发起工具调用，不要输出任何解释文字；' +
+        '拿到工具执行结果后，再基于结果输出最终回答。',
       ),
       new HumanMessage(query),
     ];
@@ -224,6 +238,17 @@ export class AiService {
               content: result,
             }),
           );
+        } else if (toolName === 'db_user_crud') {
+          const result = await this.dbUserCrudTool.invoke(toolCall.args);
+          messages.push(
+            new ToolMessage({
+              tool_call_id: toolCallId,
+              name: toolName,
+              content: result,
+            }),
+          );
+        } else {
+          throw new Error(`未知工具: ${toolName}`);
         }
       }
     }
