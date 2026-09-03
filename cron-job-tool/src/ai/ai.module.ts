@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { UsersModule } from '../users/users.module';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
+
 type WebSearchResponse = {
   code: number;
   msg?: string;
@@ -345,4 +346,4 @@ type WebSearchResponse = {
     },
   ],
 })
-export class AiModule {}
+export class AiModule { }
