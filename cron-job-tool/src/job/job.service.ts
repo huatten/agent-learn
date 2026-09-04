@@ -9,6 +9,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { EntityManager } from 'typeorm';
 import { Job } from './entities/job.entity';
+import { JobAgentService } from 'src/ai/job-agent.service';
 
 @Injectable()
 export class JobService implements OnApplicationBootstrap {
@@ -19,6 +20,9 @@ export class JobService implements OnApplicationBootstrap {
 
     @Inject(SchedulerRegistry)
     private readonly schedulerRegistry: SchedulerRegistry;
+
+    @Inject(JobAgentService)
+    private readonly jobAgentService: JobAgentService;
 
     async onApplicationBootstrap() {
         const enabledJobs = await this.entityManager.find(Job, {
@@ -70,23 +74,23 @@ export class JobService implements OnApplicationBootstrap {
     async addJob(
         input:
             | {
-                  type: 'cron';
-                  instruction: string;
-                  cron: string;
-                  isEnabled?: boolean;
-              }
+                type: 'cron';
+                instruction: string;
+                cron: string;
+                isEnabled?: boolean;
+            }
             | {
-                  type: 'every';
-                  instruction: string;
-                  everyMs: number;
-                  isEnabled?: boolean;
-              }
+                type: 'every';
+                instruction: string;
+                everyMs: number;
+                isEnabled?: boolean;
+            }
             | {
-                  type: 'at';
-                  instruction: string;
-                  at: Date;
-                  isEnabled?: boolean;
-              },
+                type: 'at';
+                instruction: string;
+                at: Date;
+                isEnabled?: boolean;
+            },
     ) {
         const entity = this.entityManager.create(Job, {
             instruction: input.instruction,
@@ -160,12 +164,25 @@ export class JobService implements OnApplicationBootstrap {
             }
 
             const ref = setInterval(() => {
-                this.logger.log(
-                    `Interval job ${job.id} is running, instruction: ${job.instruction}`,
-                );
-                void this.entityManager.update(Job, job.id, {
-                    lastRun: new Date(),
-                });
+                void (async () => {
+                    this.logger.log(
+                        `Interval job ${job.id} is running, instruction: ${job.instruction}`,
+                    );
+                    try {
+                        await this.entityManager.update(Job, job.id, {
+                            lastRun: new Date(),
+                        });
+                        const result =
+                            await this.jobAgentService.runJob(job.instruction);
+                        this.logger.log(
+                            `Interval job ${job.id} result: ${result}`,
+                        );
+                    } catch (error) {
+                        this.logger.error(
+                            `Error running job job ${job.id}: ${error}`,
+                        );
+                    }
+                })();
             }, job.everyMs);
             this.schedulerRegistry.addInterval(job.id, ref);
             return;
@@ -180,23 +197,34 @@ export class JobService implements OnApplicationBootstrap {
 
             const delay = Math.max(0, job.at.getTime() - Date.now());
             const ref = setTimeout(() => {
-                this.logger.log(
-                    `Timeout job ${job.id} is running, instruction: ${job.instruction}`,
-                );
-                void this.entityManager
-                    .update(Job, job.id, {
+                void (async () => {
+                    this.logger.log(
+                        `Timeout job ${job.id} is running, instruction: ${job.instruction}`,
+                    );
+                    await this.entityManager.update(Job, job.id, {
                         lastRun: new Date(),
                         isEnabled: false,
-                    })
-                    .then(() => {
-                        try {
-                            this.schedulerRegistry.deleteTimeout(job.id);
-                        } catch (error) {
-                            this.logger.error(
-                                `Error deleting timeout job ${job.id}: ${error}`,
-                            );
-                        }
                     });
+
+                    try {
+                        const result = await this.jobAgentService.runJob(job.instruction);
+                        this.logger.log(
+                            `Timeout job ${job.id} result: ${result}`,
+                        );
+                    } catch (error) {
+                        this.logger.error(
+                            `Error running job ${job.id}: ${error}`,
+                        );
+                    }
+
+                    try {
+                        this.schedulerRegistry.deleteTimeout(job.id);
+                    } catch (error) {
+                        this.logger.error(
+                            `Error deleting timeout job ${job.id}: ${error}`,
+                        );
+                    }
+                })();
             }, delay);
 
             this.schedulerRegistry.addTimeout(job.id, ref);
@@ -235,13 +263,23 @@ export class JobService implements OnApplicationBootstrap {
 
     private createCronJob(job: Job) {
         const cronExpression = job.cron ?? '';
-        return new CronJob(cronExpression, () => {
+        return new CronJob(cronExpression, async() => {
             this.logger.log(
                 `Cron job ${job.id} is running, instruction: ${job.instruction}`,
             );
             void this.entityManager.update(Job, job.id, {
                 lastRun: new Date(),
             });
+            try {
+                const result = await this.jobAgentService.runJob(job.instruction);
+                this.logger.log(
+                    `Cron job ${job.id} result: ${result}`,
+                );
+            } catch (error) {
+                this.logger.error(
+                    `Error running job ${job.id}: ${error}`,
+                );
+            }
         });
     }
 }

@@ -72,9 +72,19 @@ import { Runnable } from '@langchain/core/runnables';
 //   },
 // );
 
+// 流式返回的控制事件：
+// - reset：本轮是工具调用轮，之前实时下发的文本只是铺垫语，前端应清空重置
+// - tool：即将执行某个工具，前端可展示“正在调用 xxx”的进度提示
+// 普通 token 仍以纯字符串下发（SSE 默认 message 事件），与 onmessage 前端兼容
+export type AgentStreamControlEvent = {
+    type: 'reset' | 'tool';
+    data: string;
+};
+
 @Injectable()
 export class AiService {
     private readonly modelWithTools: Runnable<BaseMessage[], AIMessage>;
+    private readonly toolMap: Record<string, Runnable<Record<string, any>, string>>;
 
     constructor(
         @Inject('CHAT_MODEL') private model: ChatOpenAI,
@@ -84,10 +94,12 @@ export class AiService {
         private sendEmailTool: Runnable<Record<string, any>, string>,
         @Inject('WEB_SEARCH_TOOL')
         private webSearchTool: Runnable<Record<string, any>, string>,
-        @Inject('DB_USER_CRUD_TOOL')
+        @Inject('DB_USERS_CRUD_TOOL')
         private dbUserCrudTool: Runnable<Record<string, any>, string>,
         @Inject('CRON_JOB_TOOL')
         private cronJobTool: Runnable<Record<string, any>, string>,
+        @Inject('TIME_NOW_TOOL')
+        private timeNowTool: Runnable<Record<string, any>, string>,
     ) {
         this.modelWithTools = model.bindTools([
             this.queryUserTool,
@@ -95,7 +107,16 @@ export class AiService {
             this.webSearchTool,
             this.dbUserCrudTool,
             this.cronJobTool,
+            this.timeNowTool,
         ]);
+        this.toolMap = {
+            query_user: this.queryUserTool,
+            send_email: this.sendEmailTool,
+            web_search: this.webSearchTool,
+            db_user_crud: this.dbUserCrudTool,
+            cron_job: this.cronJobTool,
+            time_now: this.timeNowTool,
+        };
     }
 
     private currentTimeText(): string {
@@ -140,70 +161,30 @@ export class AiService {
             for (const toolCall of toolCalls) {
                 const toolCallId = toolCall.id ?? '';
                 const toolName = toolCall.name ?? '';
-                if (toolName === 'query_user') {
-                    const result = await this.queryUserTool.invoke(
-                        toolCall.args,
-                    );
-
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else if (toolName === 'send_email') {
-                    const result = await this.sendEmailTool.invoke(
-                        toolCall.args,
-                    );
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else if (toolName === 'web_search') {
-                    const result = await this.webSearchTool.invoke(
-                        toolCall.args,
-                    );
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else if (toolName === 'db_user_crud') {
-                    const result = await this.dbUserCrudTool.invoke(
-                        toolCall.args,
-                    );
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else if (toolName === 'cron_job') {
-                    const result = await this.cronJobTool.invoke(
-                        toolCall.args,
-                    );
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else {
+                const targetTool = this.toolMap[toolName];
+                if (!targetTool) {
                     throw new Error(`未知工具: ${toolName}`);
                 }
+                const result = await targetTool.invoke(toolCall.args);
+                // 工具返回值必须是字符串，否则发给模型时会报 content.flatMap 错误
+                const resultContent =
+                    typeof result === 'string'
+                        ? result
+                        : JSON.stringify(result);
+                messages.push(
+                    new ToolMessage({
+                        tool_call_id: toolCallId,
+                        name: toolName,
+                        content: resultContent,
+                    }),
+                );
             }
         }
     }
 
-    async *runChainStream(query: string): AsyncIterable<string | undefined> {
+    async *runChainStream(
+        query: string,
+    ): AsyncIterable<string | AgentStreamControlEvent> {
         const messages: BaseMessage[] = [
             new SystemMessage(
                 `【时间信息】${this.currentTimeText()}
@@ -220,17 +201,15 @@ export class AiService {
             // 一轮对话：先让模型思考，可能提出工具调用
             const stream = await this.modelWithTools.stream(messages);
             let fullAIMessage: AIMessageChunk | null = null;
-            // 本轮内容先缓存，不实时推送：
-            // 需等本轮结束确认是否有工具调用，若有则丢弃（那是过程铺垫语），
-            // 只有最终回答轮（无工具调用）才把内容输出，避免前端出现"两轮回答"。
-            let content = '';
 
             for await (const chunk of stream as AsyncIterable<AIMessageChunk>) {
                 fullAIMessage = fullAIMessage
                     ? fullAIMessage.concat(chunk)
                     : chunk;
-                if (chunk.content) {
-                    content += chunk.content as string;
+                // 文本 token 实时下发，实现真正的流式输出。
+                // 注意：若本轮末尾发现是工具调用轮，会再下发 reset 事件让前端清空铺垫语
+                if (typeof chunk.content === 'string' && chunk.content) {
+                    yield chunk.content;
                 }
             }
 
@@ -243,73 +222,36 @@ export class AiService {
             // 本轮模型是否发起了工具调用
             const toolCalls = fullAIMessage?.tool_calls ?? [];
             if (!toolCalls.length) {
-                // 没有工具调用：说明这一轮就是最终回答，输出缓存内容并结束
-                yield content;
+                // 没有工具调用：最终回答已经实时输出完毕，直接结束
                 return;
             }
 
-            // 工具调用轮：内容已丢弃，执行工具后进入下一轮让模型总结
+            // 工具调用轮：之前实时下发的只是铺垫语，通知前端清空后执行工具
+            yield { type: 'reset', data: '' };
+
+            // 依次执行本轮要调用的工具
             for (const toolCall of toolCalls) {
                 const toolCallId = toolCall.id ?? '';
                 const toolName = toolCall.name ?? '';
-                if (toolName === 'query_user') {
-                    const result = await this.queryUserTool.invoke(
-                        toolCall.args,
-                    );
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else if (toolName === 'send_email') {
-                    const result = await this.sendEmailTool.invoke(
-                        toolCall.args,
-                    );
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else if (toolName === 'web_search') {
-                    const result = await this.webSearchTool.invoke(
-                        toolCall.args,
-                    );
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else if (toolName === 'db_user_crud') {
-                    const result = await this.dbUserCrudTool.invoke(
-                        toolCall.args,
-                    );
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else if (toolName === 'cron_job') {
-                    const result = await this.cronJobTool.invoke(
-                        toolCall.args,
-                    );
-                    messages.push(
-                        new ToolMessage({
-                            tool_call_id: toolCallId,
-                            name: toolName,
-                            content: result,
-                        }),
-                    );
-                } else {
+                const targetTool = this.toolMap[toolName];
+                if (!targetTool) {
                     throw new Error(`未知工具: ${toolName}`);
                 }
+                // 先下发 tool 事件，前端可展示"正在调用 xxx"的进度提示
+                yield { type: 'tool', data: toolName };
+                const result = await targetTool.invoke(toolCall.args);
+                // 工具返回值必须是字符串，否则发给模型时会报 content.flatMap 错误
+                const resultContent =
+                    typeof result === 'string'
+                        ? result
+                        : JSON.stringify(result);
+                messages.push(
+                    new ToolMessage({
+                        tool_call_id: toolCallId,
+                        name: toolName,
+                        content: resultContent,
+                    }),
+                );
             }
         }
     }
