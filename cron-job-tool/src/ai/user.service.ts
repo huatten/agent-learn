@@ -46,7 +46,10 @@ export class UserService {
         return user;
     }
 
-    updateUser(id: string, partial: Partial<Omit<User, 'id'>>): User | undefined {
+    updateUser(
+        id: string,
+        partial: Partial<Omit<User, 'id'>>,
+    ): User | undefined {
         const existing = this.users.get(id);
         if (!existing) {
             return undefined;
