@@ -1,0 +1,8 @@
+.env
+/node_modules/
+pnpm-lock.yaml
+.DS_Store
+.idea/
+.vscode/
+package-lock.json
+*.mp3
