@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASR 语音识别测试</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --border: #334155;
+        --primary: #38bdf8;
+        --danger: #f87171;
+        --success: #34d399;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(160deg, #0f172a, #1e293b);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 560px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+      }
+
+      h1 {
+        font-size: 22px;
+        font-weight: 650;
+        text-align: center;
+      }
+
+      .subtitle {
+        margin-top: 6px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .recorder {
+        margin-top: 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .btn-record {
+        width: 108px;
+        height: 108px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        background: var(--primary);
+        color: #06263a;
+        font-size: 15px;
+        font-weight: 650;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        transition:
+          transform 0.15s ease,
+          background 0.2s ease;
+      }
+
+      .btn-record:hover:not(:disabled) {
+        transform: scale(1.04);
+      }
+
+      .btn-record:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .btn-record.recording {
+        background: var(--danger);
+        color: #3a0a0a;
+        animation: pulse 1.4s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.5);
+        }
+        70% {
+          box-shadow: 0 0 0 18px rgba(248, 113, 113, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
+        }
+      }
+
+      .mic-icon {
+        width: 30px;
+        height: 30px;
+      }
+
+      .status {
+        font-size: 14px;
+        color: var(--muted);
+        min-height: 20px;
+        text-align: center;
+      }
+
+      .timer {
+        font-variant-numeric: tabular-nums;
+        font-size: 20px;
+        letter-spacing: 1px;
+        color: var(--text);
+      }
+
+      .result {
+        margin-top: 28px;
+      }
+
+      .result-label {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        resize: vertical;
+        background: #0b1220;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        font-size: 15px;
+        line-height: 1.6;
+        font-family: inherit;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .playback {
+        margin-top: 18px;
+        display: none;
+      }
+
+      .playback audio {
+        width: 100%;
+      }
+
+      .spinner {
+        display: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.25);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error-msg {
+        margin-top: 16px;
+        display: none;
+        background: rgba(248, 113, 113, 0.12);
+        border: 1px solid var(--danger);
+        color: #fecaca;
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="card">
+      <h1>ASR 语音识别测试</h1>
+      <p class="subtitle">点击开始录音，结束后自动上传识别</p>
+
+      <div class="recorder">
+        <button id="recordBtn" class="btn-record">
+          <svg
+            class="mic-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
+          </svg>
+          <span id="recordLabel">开始录音</span>
+        </button>
+        <div id="timer" class="timer">00:00</div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <div id="spinner" class="spinner"></div>
+          <div id="status" class="status">准备就绪</div>
+        </div>
+      </div>
+
+      <div id="errorMsg" class="error-msg"></div>
+
+      <div class="result">
+        <div class="result-label">识别结果</div>
+        <textarea id="resultText" placeholder="识别出的文字将显示在这里..." readonly></textarea>
+      </div>
+
+      <div id="playback" class="playback">
+        <audio id="audioPlayer" controls></audio>
+      </div>
+    </div>
+
+    <script>
+      const recordBtn = document.getElementById('recordBtn');
+      const recordLabel = document.getElementById('recordLabel');
+      const statusEl = document.getElementById('status');
+      const timerEl = document.getElementById('timer');
+      const spinnerEl = document.getElementById('spinner');
+      const resultText = document.getElementById('resultText');
+      const errorMsg = document.getElementById('errorMsg');
+      const playback = document.getElementById('playback');
+      const audioPlayer = document.getElementById('audioPlayer');
+
+      let mediaRecorder;
+      let audioChunks = [];
+      let audioBlob = null;
+      let isRecording = false;
+      let timerId = null;
+      let seconds = 0;
+
+      function fmt(s) {
+        const m = String(Math.floor(s / 60)).padStart(2, '0');
+        const sec = String(s % 60).padStart(2, '0');
+        return `${m}:${sec}`;
+      }
+
+      function showError(msg) {
+        errorMsg.textContent = msg;
+        errorMsg.style.display = 'block';
+      }
+
+      function clearError() {
+        errorMsg.style.display = 'none';
+        errorMsg.textContent = '';
+      }
+
+      function setLoading(loading) {
+        spinnerEl.style.display = loading ? 'inline-block' : 'none';
+        recordBtn.disabled = loading;
+      }
+
+      function startTimer() {
+        stopTimer();
+        seconds = 0;
+        timerEl.textContent = fmt(seconds);
+        timerId = setInterval(() => {
+          if (!isRecording) {
+            stopTimer();
+            return;
+          }
+          seconds += 1;
+          timerEl.textContent = fmt(seconds);
+        }, 1000);
+      }
+
+      function stopTimer() {
+        if (timerId !== null) {
+          clearInterval(timerId);
+          timerId = null;
+        }
+      }
+
+      function pickMimeType() {
+        const candidates = [
+          'audio/ogg;codecs=opus',
+          'audio/webm;codecs=opus',
+          'audio/mp4',
+        ];
+        for (const type of candidates) {
+          if (window.MediaRecorder && MediaRecorder.isTypeSupported(type)) {
+            return type;
+          }
+        }
+        return '';
+      }
+
+      function encodeWav(samples, sampleRate) {
+        const buffer = new ArrayBuffer(44 + samples.length * 2);
+        const view = new DataView(buffer);
+        const writeStr = (off, s) => {
+          for (let i = 0; i < s.length; i++) {
+            view.setUint8(off + i, s.charCodeAt(i));
+          }
+        };
+        writeStr(0, 'RIFF');
+        view.setUint32(4, 36 + samples.length * 2, true);
+        writeStr(8, 'WAVE');
+        writeStr(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeStr(36, 'data');
+        view.setUint32(40, samples.length * 2, true);
+        let off = 44;
+        for (let i = 0; i < samples.length; i++, off += 2) {
+          const s = Math.max(-1, Math.min(1, samples[i]));
+          view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        }
+        return new Blob([view], { type: 'audio/wav' });
+      }
+
+      async function blobToWav16kMono(blob) {
+        const arrayBuffer = await blob.arrayBuffer();
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const decoded = await ctx.decodeAudioData(arrayBuffer);
+        ctx.close();
+        const targetRate = 16000;
+        const length = Math.ceil(decoded.duration * targetRate) || 1;
+        const offline = new OfflineAudioContext(1, length, targetRate);
+        const src = offline.createBufferSource();
+        src.buffer = decoded;
+        src.connect(offline.destination);
+        src.start();
+        const rendered = await offline.startRendering();
+        return encodeWav(rendered.getChannelData(0), targetRate);
+      }
+
+      async function startRecording() {
+        clearError();
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          showError('当前浏览器不支持录音，请使用 Chrome / Edge / Firefox 最新版');
+          return;
+        }
+
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err) {
+          showError('无法访问麦克风：' + err.message);
+          return;
+        }
+
+        const mimeType = pickMimeType();
+        try {
+          mediaRecorder = mimeType
+            ? new MediaRecorder(stream, { mimeType })
+            : new MediaRecorder(stream);
+        } catch (err) {
+          showError('初始化录音器失败：' + err.message);
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
+        audioChunks = [];
+        resultText.value = '';
+        playback.style.display = 'none';
+        audioBlob = null;
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          stopTimer();
+          stream.getTracks().forEach((t) => t.stop());
+          const rawBlob = new Blob(audioChunks, {
+            type: mediaRecorder.mimeType || 'audio/webm',
+          });
+          audioPlayer.src = URL.createObjectURL(rawBlob);
+          playback.style.display = 'block';
+
+          setLoading(true);
+          statusEl.textContent = '音频转换中...';
+          let wavBlob;
+          try {
+            wavBlob = await blobToWav16kMono(rawBlob);
+          } catch (err) {
+            setLoading(false);
+            showError('音频转换失败：' + err.message);
+            statusEl.textContent = '转换出错';
+            return;
+          }
+          await uploadAndRecognize(wavBlob, 'recording.wav');
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        recordBtn.classList.add('recording');
+        recordLabel.textContent = '停止';
+        statusEl.textContent = '正在录音...';
+        startTimer();
+      }
+
+      function stopRecording() {
+        stopTimer();
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        isRecording = false;
+        recordBtn.classList.remove('recording');
+        recordLabel.textContent = '开始录音';
+      }
+
+      async function uploadAndRecognize(blob, filename) {
+        stopTimer();
+        setLoading(true);
+        statusEl.textContent = '上传识别中...';
+
+        const form = new FormData();
+        form.append('audio', blob, filename);
+
+        try {
+          const resp = await fetch('/speech/asr', {
+            method: 'POST',
+            body: form,
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            throw new Error(data.message || `HTTP ${resp.status}`);
+          }
+          resultText.value = data.text || '(未识别到文字)';
+          statusEl.textContent = '识别完成';
+        } catch (err) {
+          showError('识别失败：' + err.message);
+          statusEl.textContent = '识别出错';
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      recordBtn.addEventListener('click', () => {
+        if (isRecording) stopRecording();
+        else startRecording();
+      });
+    </script>
+  </body>
+</html>
