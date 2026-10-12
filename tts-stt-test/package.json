@@ -1,0 +1,16 @@
+{
+  "name": "tts-stt-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "tencentcloud-sdk-nodejs": "^4.1.324",
+    "tencentcloud-sdk-nodejs-tts": "^4.1.237",
+    "ws": "^8.22.0"
+  }
+}

@@ -12,7 +12,8 @@
     "tool-test",
     "runnable-test",
     "hello-nest-langchain",
-    "cron-job-tool"
+    "cron-job-tool",
+    "tts-stt-test"
   ],
   "scripts": {
     "up": "pnpm update -r",
